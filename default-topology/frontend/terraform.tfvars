@@ -3,7 +3,7 @@ container_name           = "frontend"
 
 container_mem_soft_limit = 256
 
-container_port           = 4003
+container_port           = 80
 
 task_desired_count       = {
   dev  = 1
