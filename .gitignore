@@ -1,0 +1,4 @@
+.terraform
+infra-accelerator.iml
+terraform.tfstate.backup
+.terraform.tfstate.lock.info
