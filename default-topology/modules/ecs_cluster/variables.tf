@@ -27,3 +27,13 @@ variable "depends_on" {
   type = "list"
   description = "Used to make cluster instances depend on NAT Gateways. Without it, instances can start too early without functioning NAT instances."
 }
+
+variable "dynatrace_enabled" {
+  description = "Whether to enable Dynatrace monitoring on cluster instances or not"
+  default = ""
+}
+
+variable "dynatrace_url" {
+  description = "Dynatrace OneAgent download URL"
+  default = ""
+}

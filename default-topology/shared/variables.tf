@@ -39,3 +39,7 @@ variable "cluster_max_size" {
 }
 
 variable "cluster_ecs_ami" {}
+
+variable "dynatrace_enabled" {}
+
+variable "dynatrace_url" {}
