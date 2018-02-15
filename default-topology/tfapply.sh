@@ -7,7 +7,8 @@ function help(){
     echo "Usage: tfapply.sh [-m module ...] [-f] environment aws_profile";
     echo "Options:";
     echo "-f           : skip interactive plan approval by auto-approving it";
-    echo "-d directory : dir where to run terraform apply, defaults to: shared backend frontend";
+    echo "-d directory : dir where to run terraform apply, defaults to:"
+    echo "               shared backend frontend process-engine merchant-center";
     echo ""
     exit 1;
 }
@@ -15,13 +16,12 @@ function help(){
 DIRS=""
 AUTO_APPROVE=""
 
-while getopts "m:f" opt; do
+while getopts ":d:f" opt; do
   case $opt in
-    m)
+    d)
       DIRS+="$OPTARG "
       ;;
     f)
-
       AUTO_APPROVE="-auto-approve"
       ;;
     \?)
@@ -47,13 +47,13 @@ export AWS_PROFILE=$2
 export TF_IN_AUTOMATION=true
 
 if [[ $DIRS == "" ]]; then
-    DIRS="shared backend frontend"
+    DIRS="shared backend frontend process-engine merchant-center"
 fi
 
 for DIR in $DIRS; do
     echo ""
     echo "#-----------------------------------------------------"
-    echo "#  Creating infrastructure module $DIR                "
+    echo "#  Applying changes to $DIR                           "
     echo "#-----------------------------------------------------"
     echo ""
 
@@ -64,7 +64,7 @@ for DIR in $DIRS; do
     cd ..
     echo ""
     echo "#-----------------------------------------------------"
-    echo "#  Infrastructure module $DIR created                 "
+    echo "#  Changes applied to $DIR                            "
     echo "#-----------------------------------------------------"
     echo ""
 done
