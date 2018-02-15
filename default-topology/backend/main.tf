@@ -45,7 +45,7 @@ module "path_mapping" {
   tg_vpc_id            = "${data.terraform_remote_state.shared.vpc_id}"
   tg_health_check_path = "/api"
   listener             = {
-    "arns"  = "${data.terraform_remote_state.shared.alb_https_listener_arn}"
+    "arns"  = "${data.terraform_remote_state.shared.svc_alb_https_listener_arn}"
     "count" = 1
   }
 }

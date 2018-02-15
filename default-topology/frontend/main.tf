@@ -27,7 +27,7 @@ module "container_definition" {
   }]
   environment    = [{
     name  = "API_ENDPOINT"
-    value = "http://${data.terraform_remote_state.shared.alb_dns_name}/api/"
+    value = "http://${data.terraform_remote_state.shared.svc_alb_dns_name}/api/"
   }, {
     name = "NODE_ENV", value = "${lookup(local.env_to_node_env_map, terraform.workspace)}"
   }]
@@ -46,7 +46,7 @@ module "service" {
   task_definition_arn = "${module.task_definition.arn}"
   desired_count       = "${lookup(var.task_desired_count, terraform.workspace)}"
   use_load_balancer   = true
-  lb_target_group_arn = "${data.terraform_remote_state.shared.alb_default_target_group}"
+  lb_target_group_arn = "${data.terraform_remote_state.shared.svc_alb_default_target_group}"
   lb_container_name   = "${var.container_name}"
   lb_container_port   = "${var.container_port}"
 }

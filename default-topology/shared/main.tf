@@ -2,10 +2,23 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-module "alb" {
+module "service_alb" {
   source        = "../modules/alb"
   vpc_id        = "${module.vpc.id}"
-  alb_name      = "${var.application_name}-${terraform.workspace}-alb"
+  alb_name      = "${var.application_name}-${terraform.workspace}-svc"
+  internal      = false
+  subnet_ids    = "${module.vpc.public_subnet_ids}"
+  allow_cidrs   = {
+    "443" = ["0.0.0.0/0"]
+  }
+  http_enabled  = false
+  https_enabled = true
+}
+
+module "mc_alb" {
+  source        = "../modules/alb"
+  vpc_id        = "${module.vpc.id}"
+  alb_name      = "${var.application_name}-${terraform.workspace}-mc"
   internal      = false
   subnet_ids    = "${module.vpc.public_subnet_ids}"
   allow_cidrs   = {
@@ -25,8 +38,10 @@ module "cluster" {
   min_size          = "${var.cluster_min_size}"
   max_size          = "${var.cluster_max_size}"
   instance_type     = "${lookup(var.cluster_instance_type, terraform.workspace)}"
-  allow_sgroups     = ["${module.alb.sg_id}"]
+  allow_sgroups     = ["${module.mc_alb.sg_id}", "${module.service_alb.sg_id}"]
   depends_on        = "${module.vpc.nat_gateway_public_ips}"
+  dynatrace_enabled = "${var.dynatrace_enabled}"
+  dynatrace_url     = "${var.dynatrace_url}"
 }
 
 module "vpc" {
