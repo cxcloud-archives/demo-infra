@@ -22,10 +22,9 @@ module "alb" {
   internal      = false
   subnet_ids    = "${module.vpc.public_subnet_ids}"
   allow_cidrs   = {
-    "80"  = ["0.0.0.0/0"]
     "443" = ["0.0.0.0/0"]
   }
-  http_enabled  = true
+  http_enabled  = false
   https_enabled = true
 }
 
