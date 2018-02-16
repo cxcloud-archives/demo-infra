@@ -67,7 +67,7 @@ module "pipeline" {
   github_repository     = "${var.github_repository}"
   GITHUB_TOKEN          = "${var.github_token}"
   gitcrypt_pass         = "${var.gitcrypt_pass}"
-  build_spec            = "${data.template_file.buildspec.rendered}"
+  build_spec            = "${terraform.workspace == "dev" ? join("", data.template_file.buildspec.*.rendered) : ""}"
   pipeline_name         = "${var.application_name}-${var.container_name}"
   ecs_dev_cluster_name  = "${data.terraform_remote_state.shared.cluster_name}"
   ecs_dev_service_name  = "${module.service.name}"
