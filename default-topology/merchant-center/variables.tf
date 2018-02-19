@@ -7,6 +7,10 @@ variable "aws_prod_account_id" {
   default = ""
 }
 
+variable "workspace_iam_roles" {
+  type = "map"
+}
+
 variable "container_name" {}
 
 variable "container_mem_soft_limit" {}

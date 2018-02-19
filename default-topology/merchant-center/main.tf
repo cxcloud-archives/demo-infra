@@ -1,12 +1,8 @@
 provider "aws" {
   region = "eu-west-1"
-}
-
-module "ecr_repository" {
-  source          = "../modules/ecr_repository"
-  dev_account_id  = "${var.aws_dev_account_id}"
-  prod_account_id = "${var.aws_prod_account_id}"
-  name            = "${var.container_name}"
+  assume_role {
+    role_arn = "${lookup(var.workspace_iam_roles, terraform.workspace)}"
+  }
 }
 
 locals {
@@ -15,6 +11,13 @@ locals {
     "test" = "staging"
     "prod" = "production"
   }
+}
+
+module "ecr_repository" {
+  source          = "../modules/ecr_repository"
+  dev_account_id  = "${var.aws_dev_account_id}"
+  prod_account_id = "${var.aws_prod_account_id}"
+  name            = "${var.container_name}"
 }
 
 module "container_definition" {
@@ -73,5 +76,8 @@ module "pipeline" {
   ecs_dev_service_name  = "${module.service.name}"
   ecs_test_cluster_name = "${var.application_name}-test-cluster"                # FIXME
   ecs_test_service_name = "${var.application_name}-test-${var.container_name}"  # FIXME
+  ecs_prod_cluster_name = "${var.application_name}-prod-cluster"                # FIXME, hardcoded
+  ecs_prod_service_name = "${var.application_name}-prod-${var.container_name}"  # FIXME, hardcoded
+  ecs_prod_role_arn     = "${lookup(var.workspace_iam_roles, terraform.workspace)}"
   create_pipeline       = "${terraform.workspace == "dev" ? true : false}"
 }

@@ -1,13 +1,13 @@
-resource "aws_s3_bucket" "backend_artifact_bucket" {
+resource "aws_s3_bucket" "pipeline_artifact_bucket" {
   count         = "${var.create_pipeline ? 1 : 0}"
   bucket        = "${var.pipeline_name}-bucket"
   acl           = "private"
   force_destroy = true
 }
 
-resource "aws_iam_role" "backend_pipeline_role" {
+resource "aws_iam_role" "pipeline_role" {
   count              = "${var.create_pipeline ? 1 : 0}"
-  name               = "${var.pipeline_name}-role"
+  name               = "${var.pipeline_name}-pipelin-role"
 
   assume_role_policy = <<EOF
 {
@@ -25,10 +25,10 @@ resource "aws_iam_role" "backend_pipeline_role" {
 EOF
 }
 
-resource "aws_iam_role_policy" "backend_pipeline_policy" {
+resource "aws_iam_role_policy" "pipeline_policy" {
   count  = "${var.create_pipeline ? 1 : 0}"
   name   = "${var.pipeline_name}-policy"
-  role   = "${aws_iam_role.backend_pipeline_role.id}"
+  role   = "${aws_iam_role.pipeline_role.id}"
   policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -41,18 +41,24 @@ resource "aws_iam_role_policy" "backend_pipeline_policy" {
         "s3:GetBucketVersioning"
       ],
       "Resource": [
-        "${aws_s3_bucket.backend_artifact_bucket.arn}",
-        "${aws_s3_bucket.backend_artifact_bucket.arn}/*"
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}",
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}/*"
       ]
     },
+{
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "${var.ecs_prod_role_arn}"
+    },
+
     {
       "Effect": "Allow",
       "Action": [
           "s3:PutObject"
       ],
       "Resource": [
-        "${aws_s3_bucket.backend_artifact_bucket.arn}",
-        "${aws_s3_bucket.backend_artifact_bucket.arn}/*"
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}",
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}/*"
       ]
     },
     {
@@ -125,8 +131,8 @@ resource "aws_iam_policy" "codebuild_policy" {
         "s3:GetObjectVersion"
       ],
       "Resource": [
-        "${aws_s3_bucket.backend_artifact_bucket.arn}",
-        "${aws_s3_bucket.backend_artifact_bucket.arn}/*"
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}",
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}/*"
       ]
     },
     {
@@ -136,8 +142,8 @@ resource "aws_iam_policy" "codebuild_policy" {
         "s3:PutObject"
       ],
       "Resource": [
-        "${aws_s3_bucket.backend_artifact_bucket.arn}",
-        "${aws_s3_bucket.backend_artifact_bucket.arn}/*"
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}",
+        "${aws_s3_bucket.pipeline_artifact_bucket.arn}/*"
       ]
     }
   ]
@@ -158,7 +164,7 @@ resource "aws_iam_role_policy_attachment" "ecr_power_user_policy_attachment" {
   role       = "${aws_iam_role.codebuild_role.name}"
 }
 
-resource "aws_codebuild_project" "codebuild" {
+resource "aws_codebuild_project" "codebuild_project" {
   count        = "${var.create_pipeline ? 1 : 0}"
   name         = "${var.pipeline_name}-codebuild"
   service_role = "${aws_iam_role.codebuild_role.arn}"
@@ -189,10 +195,10 @@ resource "aws_codebuild_project" "codebuild" {
 resource "aws_codepipeline" "pipeline" {
   count    = "${var.create_pipeline ? 1 : 0}"
   name     = "${var.pipeline_name}"
-  role_arn = "${aws_iam_role.backend_pipeline_role.arn}"
+  role_arn = "${aws_iam_role.pipeline_role.arn}"
 
   artifact_store {
-    location = "${aws_s3_bucket.backend_artifact_bucket.bucket}"
+    location = "${aws_s3_bucket.pipeline_artifact_bucket.bucket}"
     type     = "S3"
   }
 
@@ -233,13 +239,14 @@ resource "aws_codepipeline" "pipeline" {
       version          = "1"
 
       configuration {
-        ProjectName = "${aws_codebuild_project.codebuild.name}"
+        ProjectName = "${aws_codebuild_project.codebuild_project.name}"
       }
     }
   }
 
   stage {
-    name = "Development"
+
+    name = "Staging"
 
     action {
       name            = "Deploy"
@@ -258,7 +265,8 @@ resource "aws_codepipeline" "pipeline" {
   }
 
   stage {
-    name = "Staging"
+
+    name = "Production"
 
     action {
       name      = "Approve"
@@ -277,10 +285,11 @@ resource "aws_codepipeline" "pipeline" {
       input_artifacts = ["app-build"]
       version         = "1"
       run_order       = 2
+      role_arn        = "${var.ecs_prod_role_arn}"
 
       configuration {
-        ClusterName = "${var.ecs_test_cluster_name}"
-        ServiceName = "${var.ecs_test_service_name}"
+        ClusterName = "${var.ecs_prod_cluster_name}"
+        ServiceName = "${var.ecs_prod_service_name}"
         FileName    = "imagedefinitions.json"
       }
     }

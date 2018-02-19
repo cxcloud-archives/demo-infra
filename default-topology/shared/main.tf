@@ -1,5 +1,8 @@
 provider "aws" {
   region = "eu-west-1"
+  assume_role {
+    role_arn = "${lookup(var.workspace_iam_roles, terraform.workspace)}"
+  }
 }
 
 module "service_alb" {

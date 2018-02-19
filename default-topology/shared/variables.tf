@@ -1,6 +1,10 @@
 
 variable "application_name" {}
 
+variable "workspace_iam_roles" {
+  type = "map"
+}
+
 variable "azs" {
   type = "list"
 }
