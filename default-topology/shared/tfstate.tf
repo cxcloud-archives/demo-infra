@@ -1,5 +1,7 @@
 
 terraform {
+  required_version = ">= 0.11.3"
+
   backend "s3" {
     key                         = "shared"
     bucket                      = "cxcloud-tf-state"
