@@ -4,9 +4,10 @@ set -euo pipefail
 
 function help(){
     echo "";
-    echo "Usage: tfapply.sh [-m module ...] [-f] environment aws_profile";
+    echo "Usage: apply.sh [-d directory ...] [-f] [-u] environment aws_profile";
     echo "Options:";
-    echo "-f           : skip interactive plan approval by auto-approving it";
+    echo "-f           : auto-approve plan";
+    echo "-u           : upgrade modules";
     echo "-d directory : dir where to run terraform apply, defaults to:"
     echo "               shared backend frontend process-engine merchant-center";
     echo ""
@@ -15,11 +16,15 @@ function help(){
 
 DIRS=""
 AUTO_APPROVE=""
+UPGRADE=""
 
-while getopts ":d:f" opt; do
+while getopts ":d:fu" opt; do
   case $opt in
     d)
       DIRS+="$OPTARG "
+      ;;
+    u)
+      UPGRADE="-upgrade"
       ;;
     f)
       AUTO_APPROVE="-auto-approve"
@@ -53,18 +58,19 @@ fi
 for DIR in $DIRS; do
     echo ""
     echo "#-----------------------------------------------------"
-    echo "#  Applying changes to $DIR                           "
+    echo "#  Applying changes to $DIR on $ENVIRONMENT           "
     echo "#-----------------------------------------------------"
     echo ""
 
     cd $DIR
-    terraform init
+    terraform init -input=false $UPGRADE
     terraform workspace new $ENVIRONMENT || true
+    terraform workspace 'select' $ENVIRONMENT
     terraform apply $AUTO_APPROVE -var-file ../application.tfvars -var-file ../secrets.tfvars
     cd ..
     echo ""
     echo "#-----------------------------------------------------"
-    echo "#  Changes applied to $DIR                            "
+    echo "#  Changes applied to $DIR on $ENVIRONMENT            "
     echo "#-----------------------------------------------------"
     echo ""
 done
