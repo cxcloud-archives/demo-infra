@@ -1,13 +1,178 @@
+data "aws_caller_identity" "current" {}
+
+provider "aws" {
+  alias  = "prod"
+  region = "eu-west-1"
+  assume_role {
+    role_arn = "${var.terraform_prod_role}"
+  }
+}
+
+resource "aws_iam_role" "prod_deploy_role" {
+  count              = "${var.create_pipeline ? 1 : 0}"
+  provider           = "aws.prod"
+  name               = "${var.pipeline_name}-prod-deploy-role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "${aws_iam_role.pipeline_role.arn}"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "prod_deploy_role_policy" {
+  count    = "${var.create_pipeline ? 1 : 0}"
+  provider = "aws.prod"
+  name     = "${var.pipeline_name}-prod-deploy-role-policy"
+  role     = "${aws_iam_role.prod_deploy_role.id}"
+  policy   = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+       "Effect": "Allow",
+       "Action": [
+         "s3:*"
+       ],
+       "Resource": [
+          "${aws_s3_bucket.pipeline_artifact_bucket.arn}",
+          "${aws_s3_bucket.pipeline_artifact_bucket.arn}/*"
+       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+         "kms:DescribeKey",
+         "kms:GenerateDataKey*",
+         "kms:Encrypt",
+         "kms:ReEncrypt*",
+         "kms:Decrypt"
+        ],
+      "Resource": [
+         "${aws_kms_key.kms_key.arn}"
+      ]
+    },
+    {
+      "Action": [
+          "ecs:*",
+          "iam:PassRole"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_kms_key" "kms_key" {
+  count  = "${var.create_pipeline ? 1 : 0}"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Allow administration of the key",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root" },
+      "Action": [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Allow use of the key",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+          "${aws_iam_role.pipeline_role.arn}",
+          "${aws_iam_role.codebuild_role.arn}",
+          "${aws_iam_role.prod_deploy_role.arn}",
+          "arn:aws:iam::${var.prod_account_id}:root"
+        ]
+      },
+      "Action": [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_kms_alias" "key_alias" {
+  count = "${var.create_pipeline ? 1 : 0}"
+  name = "alias/${var.pipeline_name}-key"
+  target_key_id = "${aws_kms_key.kms_key.id}"
+}
+
 resource "aws_s3_bucket" "pipeline_artifact_bucket" {
   count         = "${var.create_pipeline ? 1 : 0}"
   bucket        = "${var.pipeline_name}-bucket"
   acl           = "private"
   force_destroy = true
+
+  policy        = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+	{
+  	"Sid": "DenyUnEncryptedObjectUploads",
+	  "Effect": "Deny",
+	  "Principal": "*",
+	  "Action": "s3:PutObject",
+	  "Resource": "arn:aws:s3:::${var.pipeline_name}-bucket/*",
+	  "Condition": {
+		"StringNotEquals": {
+		  "s3:x-amz-server-side-encryption": "aws:kms"
+		}
+      }
+    },
+	{
+	  "Effect": "Allow",
+	  "Principal": {
+		"AWS": "arn:aws:iam::${var.prod_account_id}:root"
+      },
+	  "Action": [
+        "s3:*"
+      ],
+	  "Resource": [
+        "arn:aws:s3:::${var.pipeline_name}-bucket",
+	    "arn:aws:s3:::${var.pipeline_name}-bucket/*"
+      ]
+	}
+  ]
+}
+EOF
 }
 
 resource "aws_iam_role" "pipeline_role" {
   count              = "${var.create_pipeline ? 1 : 0}"
-  name               = "${var.pipeline_name}-pipelin-role"
+  name               = "${var.pipeline_name}-pipeline-role"
 
   assume_role_policy = <<EOF
 {
@@ -45,12 +210,11 @@ resource "aws_iam_role_policy" "pipeline_policy" {
         "${aws_s3_bucket.pipeline_artifact_bucket.arn}/*"
       ]
     },
-{
+    {
       "Effect": "Allow",
       "Action": "sts:AssumeRole",
-      "Resource": "${var.ecs_prod_role_arn}"
+      "Resource": "${aws_iam_role.prod_deploy_role.arn}"
     },
-
     {
       "Effect": "Allow",
       "Action": [
@@ -127,6 +291,8 @@ resource "aws_iam_policy" "codebuild_policy" {
       "Sid": "S3GetObjectPolicy",
       "Effect": "Allow",
       "Action": [
+        "s3:ListObjects",
+        "s3:ListBucket",
         "s3:GetObject",
         "s3:GetObjectVersion"
       ],
@@ -168,6 +334,7 @@ resource "aws_codebuild_project" "codebuild_project" {
   count        = "${var.create_pipeline ? 1 : 0}"
   name         = "${var.pipeline_name}-codebuild"
   service_role = "${aws_iam_role.codebuild_role.arn}"
+  encryption_key = "${aws_kms_key.kms_key.id}"
 
   source {
     type      = "CODEPIPELINE"
@@ -200,6 +367,11 @@ resource "aws_codepipeline" "pipeline" {
   artifact_store {
     location = "${aws_s3_bucket.pipeline_artifact_bucket.bucket}"
     type     = "S3"
+
+    encryption_key {
+      id   = "${aws_kms_key.kms_key.id}"
+      type = "KMS"
+    }
   }
 
   stage {
@@ -222,9 +394,9 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
   # see https://stackoverflow.com/questions/48243968/terraform-ignore-changes-and-sub-blocks
-  lifecycle {
-    ignore_changes = ["stage.0.action.0.configuration.OAuthToken", "stage.0.action.0.configuration.%"]
-  }
+  #lifecycle {
+  #  ignore_changes = ["stage.0.action.0.configuration.OAuthToken", "stage.0.action.0.configuration.%"]
+  #}
 
   stage {
     name = "Build"
@@ -285,7 +457,7 @@ resource "aws_codepipeline" "pipeline" {
       input_artifacts = ["app-build"]
       version         = "1"
       run_order       = 2
-      role_arn        = "${var.ecs_prod_role_arn}"
+      role_arn        = "${aws_iam_role.prod_deploy_role.arn}"
 
       configuration {
         ClusterName = "${var.ecs_prod_cluster_name}"

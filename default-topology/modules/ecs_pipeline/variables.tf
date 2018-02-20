@@ -12,7 +12,9 @@ variable "ecs_prod_cluster_name" {}
 
 variable "ecs_prod_service_name" {}
 
-variable "ecs_prod_role_arn" {}
+variable "terraform_prod_role" {}
+
+variable "prod_account_id" {}
 
 variable "github_user" {}
 

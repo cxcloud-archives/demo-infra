@@ -73,6 +73,7 @@ module "pipeline" {
   ecs_test_service_name = "${var.application_name}-test-${var.container_name}"  # FIXME
   ecs_prod_cluster_name = "${var.application_name}-prod-cluster"                # FIXME, hardcoded
   ecs_prod_service_name = "${var.application_name}-prod-${var.container_name}"  # FIXME, hardcoded
-  ecs_prod_role_arn     = "${lookup(var.workspace_iam_roles, terraform.workspace)}"
+  terraform_prod_role   = "${lookup(var.workspace_iam_roles, "prod")}"
+  prod_account_id       = "${var.aws_prod_account_id}"
   create_pipeline       = "${terraform.workspace == "dev" ? true : false}"
 }
