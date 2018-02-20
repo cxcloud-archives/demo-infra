@@ -21,7 +21,7 @@ module "ecr_repository" {
 }
 
 module "container_definition" {
-  source         = "github.com/tieto-cem/terraform-aws-ecs-task-definition//modules/container-definition?ref=v0.1.2"
+  source         = "github.com/tieto-cem/terraform-aws-ecs-task-definition//modules/container-definition?ref=v0.1.3"
   name           = "${var.container_name}"
   image          = "${module.ecr_repository.url}:latest"
   mem_soft_limit = "${var.container_mem_soft_limit}"
@@ -37,21 +37,22 @@ module "container_definition" {
 }
 
 module "task_definition" {
-  source                = "github.com/tieto-cem/terraform-aws-ecs-task-definition?ref=v0.1.2"
+  source                = "github.com/tieto-cem/terraform-aws-ecs-task-definition?ref=v0.1.3"
   name                  = "${var.application_name}-${terraform.workspace}-${var.container_name}"
   container_definitions = ["${module.container_definition.json}"]
 }
 
 module "service" {
-  source              = "github.com/tieto-cem/terraform-aws-ecs-service?ref=v0.1.0"
-  name                = "${var.application_name}-${terraform.workspace}-${var.container_name}"
-  cluster_name        = "${data.terraform_remote_state.shared.cluster_name}"
-  task_definition_arn = "${module.task_definition.arn}"
-  desired_count       = "${lookup(var.task_desired_count, terraform.workspace)}"
-  use_load_balancer   = true
-  lb_target_group_arn = "${data.terraform_remote_state.shared.svc_alb_default_target_group}"
-  lb_container_name   = "${var.container_name}"
-  lb_container_port   = "${var.container_port}"
+  source                   = "github.com/tieto-cem/terraform-aws-ecs-service?ref=v0.1.1"
+  name                     = "${var.application_name}-${terraform.workspace}-${var.container_name}"
+  cluster_name             = "${data.terraform_remote_state.shared.cluster_name}"
+  task_definition_family   = "${module.task_definition.family}"
+  task_definition_revision = "${module.task_definition.revision}"
+  desired_count            = "${lookup(var.task_desired_count, terraform.workspace)}"
+  use_load_balancer        = true
+  lb_target_group_arn      = "${data.terraform_remote_state.shared.svc_alb_default_target_group}"
+  lb_container_name        = "${var.container_name}"
+  lb_container_port        = "${var.container_port}"
 }
 
 data "template_file" "buildspec" {

@@ -7,8 +7,8 @@ container_port           = 80
 
 task_desired_count       = {
   dev  = 1
-  test = 2
-  prod = 2
+  test = 1
+  prod = 1
 }
 
 github_repository        = "frontend-accelerator"
