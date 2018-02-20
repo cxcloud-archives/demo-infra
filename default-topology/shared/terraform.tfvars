@@ -3,7 +3,7 @@ azs                   = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
 single_nat_gateway    = {
   dev  = true
   test = true
-  prod = false
+  prod = true
 }
 
 vpc_cidr              = {
@@ -32,8 +32,8 @@ cluster_instance_type = {
 
 cluster_desired_size  = {
   dev  = 1
-  test = 2
-  prod = 2
+  test = 1
+  prod = 1
 }
 
 cluster_ecs_ami       = "ami-1d46df64"

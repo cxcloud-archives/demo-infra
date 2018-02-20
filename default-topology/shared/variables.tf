@@ -1,4 +1,3 @@
-
 variable "application_name" {}
 
 variable "workspace_iam_roles" {
@@ -47,3 +46,18 @@ variable "cluster_ecs_ami" {}
 variable "dynatrace_enabled" {}
 
 variable "dynatrace_url" {}
+
+
+variable "svc_domain_names" {
+  type = "map"
+}
+
+variable "mc_domain_names" {
+  type = "map"
+}
+
+variable "zone_domain_name" {}
+
+variable "route53_configuration_role" {
+  default = ""
+}

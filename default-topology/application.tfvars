@@ -1,6 +1,20 @@
 application_name    = "cxcloud"
 
-dynatrace_enabled    = true
+dynatrace_enabled   = true
+
+svc_domain_names     = {
+  dev  = "dev.cxcloud.com"
+  test = "test.cxcloud.com"
+  prod = "demo.cxcloud.com"
+}
+
+mc_domain_names      = {
+  dev  = "mc.dev.cxcloud.com"
+  test = "mc.test.cxcloud.com"
+  prod = "mc.cxcloud.com"
+}
+
+zone_domain_name = "cxcloud.com."
 
 vpc_cidr            = {
   dev  = "10.0.0.0/20"

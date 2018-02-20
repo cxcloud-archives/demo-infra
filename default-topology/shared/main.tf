@@ -5,30 +5,54 @@ provider "aws" {
   }
 }
 
+module "service_alb_certificate" {
+  source                     = "../modules/acm_certificate"
+  certificate_domain_name    = "${lookup(var.svc_domain_names, terraform.workspace)}"
+  zone_domain_name           = "${var.zone_domain_name}"
+  route53_configuration_role = "${var.route53_configuration_role}"
+}
+
 module "service_alb" {
-  source        = "../modules/alb"
-  vpc_id        = "${module.vpc.id}"
-  alb_name      = "${var.application_name}-${terraform.workspace}-svc"
-  internal      = false
-  subnet_ids    = "${module.vpc.public_subnet_ids}"
-  allow_cidrs   = {
+  source                     = "../modules/alb"
+  vpc_id                     = "${module.vpc.id}"
+  alb_name                   = "${var.application_name}-${terraform.workspace}-svc"
+  internal                   = false
+  subnet_ids                 = "${module.vpc.public_subnet_ids}"
+  allow_cidrs                = {
     "443" = ["0.0.0.0/0"]
   }
-  http_enabled  = false
-  https_enabled = true
+  http_enabled               = false
+  https_enabled              = true
+  https_certificate_arn      = "${module.service_alb_certificate.arn}"
+
+  zone_domain_name           = "${var.zone_domain_name}"
+  route53_configuration_role = "${var.route53_configuration_role}"
+  alb_domain_name            = "${lookup(var.svc_domain_names, terraform.workspace)}"
+}
+
+module "mc_alb_certificate" {
+  source                     = "../modules/acm_certificate"
+  certificate_domain_name    = "${lookup(var.mc_domain_names, terraform.workspace)}"
+  zone_domain_name           = "${var.zone_domain_name}"
+  route53_configuration_role = "${var.route53_configuration_role}"
 }
 
 module "mc_alb" {
-  source        = "../modules/alb"
-  vpc_id        = "${module.vpc.id}"
-  alb_name      = "${var.application_name}-${terraform.workspace}-mc"
-  internal      = false
-  subnet_ids    = "${module.vpc.public_subnet_ids}"
-  allow_cidrs   = {
+  source                     = "../modules/alb"
+  vpc_id                     = "${module.vpc.id}"
+  alb_name                   = "${var.application_name}-${terraform.workspace}-mc"
+  internal                   = false
+  subnet_ids                 = "${module.vpc.public_subnet_ids}"
+  allow_cidrs                = {
     "443" = ["0.0.0.0/0"]
   }
-  http_enabled  = false
-  https_enabled = true
+  http_enabled               = false
+  https_enabled              = true
+  https_certificate_arn      = "${module.mc_alb_certificate.arn}"
+
+  zone_domain_name           = "${var.zone_domain_name}"
+  route53_configuration_role = "${var.route53_configuration_role}"
+  alb_domain_name            = "${lookup(var.mc_domain_names, terraform.workspace)}"
 }
 
 module "cluster" {
