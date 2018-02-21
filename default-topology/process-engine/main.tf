@@ -30,6 +30,8 @@ module "container_definition" {
   }]
   environment    = [{
     name = "NODE_ENV", value = "${lookup(local.env_to_node_env_map, terraform.workspace)}"
+    name = "CT_EVENT_QUEUE", value = "${aws_sqs_queue.ct_event_queue.name}"
+    name = "ACTION_QUEUE", value = "${aws_sqs_queue.action_queue.name}"
   }]
 }
 
