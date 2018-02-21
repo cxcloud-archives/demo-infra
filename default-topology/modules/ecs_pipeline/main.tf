@@ -125,8 +125,8 @@ EOF
 }
 
 resource "aws_kms_alias" "key_alias" {
-  count = "${var.create_pipeline ? 1 : 0}"
-  name = "alias/${var.pipeline_name}-key"
+  count         = "${var.create_pipeline ? 1 : 0}"
+  name          = "alias/${var.pipeline_name}-key"
   target_key_id = "${aws_kms_key.kms_key.id}"
 }
 
@@ -331,10 +331,10 @@ resource "aws_iam_role_policy_attachment" "ecr_power_user_policy_attachment" {
 }
 
 resource "aws_codebuild_project" "codebuild_project" {
-  count        = "${var.create_pipeline ? 1 : 0}"
-  name         = "${var.pipeline_name}-codebuild"
-  service_role = "${aws_iam_role.codebuild_role.arn}"
-  encryption_key = "${aws_kms_key.kms_key.id}"
+  count          = "${var.create_pipeline ? 1 : 0}"
+  name           = "${var.pipeline_name}-codebuild"
+  service_role   = "${aws_iam_role.codebuild_role.arn}"
+  encryption_key = "${aws_kms_key.kms_key.arn}"
 
   source {
     type      = "CODEPIPELINE"
@@ -394,9 +394,9 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
   # see https://stackoverflow.com/questions/48243968/terraform-ignore-changes-and-sub-blocks
-  #lifecycle {
-  #  ignore_changes = ["stage.0.action.0.configuration.OAuthToken", "stage.0.action.0.configuration.%"]
-  #}
+  lifecycle {
+    ignore_changes = ["stage.0.action.0.configuration.OAuthToken", "stage.0.action.0.configuration.%"]
+  }
 
   stage {
     name = "Build"
