@@ -64,6 +64,7 @@ module "service" {
   lb_target_group_arn      = "${module.path_mapping.target_group_arn}"
   lb_container_name        = "${var.container_name}"
   lb_container_port        = "${var.container_port}"
+  health_check_grace_period_seconds = 60
 }
 
 data "template_file" "buildspec" {

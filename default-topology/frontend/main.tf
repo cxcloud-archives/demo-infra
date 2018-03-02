@@ -51,6 +51,7 @@ module "service" {
   lb_target_group_arn      = "${data.terraform_remote_state.shared.svc_alb_default_target_group}"
   lb_container_name        = "${var.container_name}"
   lb_container_port        = "${var.container_port}"
+  health_check_grace_period_seconds = 60
 }
 
 data "template_file" "buildspec" {
