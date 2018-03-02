@@ -19,14 +19,26 @@ NEW_IMAGE_TAG=$3
 CURRENT_TASK_DEF_ARN=$(aws ecs describe-services --cluster $1 --service $2 --query "services[*].taskDefinition" --output text)
 CURRENT_TASK_DEF=$(aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEF_ARN)
 
-CURRENT_IMAGE_NAME_WO_TAG=$(echo $CURRENT_TASK_DEF | jq -r '.taskDefinition.containerDefinitions[0].image | split(":")[0:-1] | join("")')
+echo "Current task definition arn:  $CURRENT_TASK_DEF_ARN"
+
+CURRENT_IMAGE_NAME=$(echo $CURRENT_TASK_DEF | jq '.taskDefinition.containerDefinitions[0].image')
+
+echo "Current image:                $CURRENT_IMAGE_NAME"
+
+CURRENT_IMAGE_NAME_WO_TAG=$(echo $CURRENT_IMAGE_NAME | jq -r 'split(":")[0:-1] | join("")')
 
 NEW_IMAGE_URL=$CURRENT_IMAGE_NAME_WO_TAG:$NEW_IMAGE_TAG
+
+echo "New image:                    \"$NEW_IMAGE_URL\""
 
 NEW_TASK_DEF=$(echo $CURRENT_TASK_DEF | jq ".taskDefinition | .containerDefinitions[0].image |= \"$NEW_IMAGE_URL\" | del(.taskDefinitionArn,.status,.revision,.requiresAttributes,.compatibilities)")
 
 NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF" | jq -r '.taskDefinition.taskDefinitionArn')
-echo $NEW_TASK_DEF_ARN
 
-aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $NEW_TASK_DEF_ARN
+echo "New task definition arn:      $NEW_TASK_DEF_ARN"
+
+SERVICE=$(aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $NEW_TASK_DEF_ARN)
+
+echo "Service updated successfully!"
+
 
