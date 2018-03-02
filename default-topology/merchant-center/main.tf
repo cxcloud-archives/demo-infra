@@ -28,12 +28,10 @@ module "container_definition" {
   port_mappings  = [{
     containerPort = "${var.container_port}"
   }]
-  environment    = [{
-    name  = "API_ENDPOINT"
-    value = "http://${data.terraform_remote_state.shared.svc_alb_dns_name}/api/"
-  }, {
-    name = "NODE_ENV", value = "${lookup(local.env_to_node_env_map, terraform.workspace)}"
-  }]
+  environment    = [
+    { name  = "API_ENDPOINT" value = "http://${data.terraform_remote_state.shared.svc_alb_dns_name}/api/" },
+    { name = "NODE_ENV", value = "${lookup(local.env_to_node_env_map, terraform.workspace)}" }
+  ]
 }
 
 module "task_definition" {
