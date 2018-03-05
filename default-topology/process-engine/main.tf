@@ -28,17 +28,68 @@ module "container_definition" {
   port_mappings  = [{
     containerPort = "${var.container_port}"
   }]
-  environment    = [
-    { name = "NODE_ENV", value = "${lookup(local.env_to_node_env_map, terraform.workspace)}" },
-    { name = "CT_EVENT_QUEUE", value = "${aws_sqs_queue.ct_event_queue.name}" },
-    { name = "ACTION_QUEUE", value = "${aws_sqs_queue.action_queue.name}" }
-  ]
+  environment    = [{
+    name = "NODE_ENV", value = "${lookup(local.env_to_node_env_map, terraform.workspace)}"
+  }, {
+    name = "CT_EVENT_QUEUE", value = "${aws_sqs_queue.ct_event_queue.name}"
+  }, {
+    name = "ACTION_QUEUE", value = "${aws_sqs_queue.action_queue.name}"
+  }]
 }
 
 module "task_definition" {
   source                = "github.com/tieto-cem/terraform-aws-ecs-task-definition?ref=v0.1.3"
   name                  = "${var.application_name}-${terraform.workspace}-${var.container_name}"
   container_definitions = ["${module.container_definition.json}"]
+}
+
+resource "aws_iam_role_policy" "task_policy" {
+  name   = "${var.application_name}-${terraform.workspace}-${var.container_name}-task-policy"
+  role   = "${module.task_definition.role_id}"
+  policy = <<EOF
+{
+  "Version":"2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "sqs:DeleteMessage",
+            "sqs:ReceiveMessage",
+            "sqs:GetQueueUrl",
+            "sqs:ChangeMessageVisibility"
+        ],
+        "Resource": "${aws_sqs_queue.ct_event_queue.arn}"
+    },
+    {
+        "Effect": "Allow",
+        "Action": [
+            "sqs:DeleteMessage",
+            "sqs:ReceiveMessage",
+            "sqs:SendMessage",
+            "sqs:GetQueueUrl",
+            "sqs:ChangeMessageVisibility"
+        ],
+        "Resource": "${aws_sqs_queue.action_queue.arn}"
+    },
+    {
+        "Effect": "Allow",
+        "Action": [
+            "sqs:GetQueueUrl",
+            "sqs:ListQueues"
+        ],
+        "Resource": "*"
+    },
+    {
+        "Effect": "Allow",
+        "Action": [
+            "ses:SendEmail",
+            "ses:SendRawEmail"
+        ],
+        "Resource": "*"
+    }
+  ]
+}
+EOF
 }
 
 module "service" {
