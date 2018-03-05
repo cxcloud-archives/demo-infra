@@ -102,7 +102,7 @@ data "template_cloudinit_config" "userdata" {
 # Container instances to be associated with the ECS cluster
 
 module "cluster_instances" {
-  source                  = "github.com/tieto-cem/terraform-aws-ecs-container-instance?ref=v0.1.6"
+  source                  = "github.com/tieto-cem/terraform-aws-ecs-container-instance?ref=v0.1.7"
   name                    = "${var.cluster_name}"
   ecs_cluster_name        = "${aws_ecs_cluster.ecs_cluster.name}"
   lc_instance_type        = "${var.instance_type}"
