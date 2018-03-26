@@ -5,6 +5,7 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
+      - echo '#!/bin/bash' > /usr/local/bin/ok; echo 'if [[ "$CODEBUILD_BUILD_SUCCEEDING" == "0" ]]; then exit 1; else exit 0; fi' >> /usr/local/bin/ok; chmod +x /usr/local/bin/ok
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
       - REPOSITORY_URI=${REPOSITORY_URI}
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -12,17 +13,17 @@ phases:
       - ./scripts/codebuild-decrypt.sh
   build:
     commands:
-      - echo Build started on `date`
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+      - ok && echo Build started on `date`
+      - ok && echo Building the Docker image...
+      - ok && docker build -t $REPOSITORY_URI:latest .
+      - ok && cdocker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Writing image definitions file...
-      - printf '[{"name":"${CONTAINER_NAME}","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - ok && echo Build completed on `date`
+      - ok && echo Pushing the Docker images...
+      - ok && docker push $REPOSITORY_URI:latest
+      - ok && docker push $REPOSITORY_URI:$IMAGE_TAG
+      - ok && echo Writing image definitions file...
+      - ok && printf '[{"name":"${CONTAINER_NAME}","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
     files: imagedefinitions.json
