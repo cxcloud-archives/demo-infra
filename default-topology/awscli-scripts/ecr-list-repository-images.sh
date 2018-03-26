@@ -15,4 +15,4 @@ fi
 
 REPOSITORY_NAME=$1
 
-aws ecr describe-images --query 'imageDetails[*].{Repository:repositoryName,PushedAt:imagePushedAt,Tags:join(`, `, not_null(imageTags, `[]`))} | sort_by(@, &PushedAt)' --repository-name $REPOSITORY_NAME --output table
+aws ecr describe-images --query 'imageDetails[*].{Repository:repositoryName,PushedAt:imagePushedAt,Tags:join(`, `, not_null(imageTags, `[]`))} | reverse(sort_by(@, &PushedAt))' --repository-name $REPOSITORY_NAME --output table
