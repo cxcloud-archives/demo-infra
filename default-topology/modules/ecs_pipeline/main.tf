@@ -418,6 +418,27 @@ resource "aws_codepipeline" "pipeline" {
 
   stage {
 
+    name = "Deploy"
+
+    action {
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      input_artifacts = ["app-build"]
+      version         = "1"
+
+      configuration {
+        ClusterName = "${var.ecs_dev_cluster_name}"
+        ServiceName = "${var.ecs_dev_service_name}"
+        FileName    = "imagedefinitions.json"
+      }
+    }
+  }
+}
+/*
+  stage {
+
     name = "Staging"
 
     action {
@@ -465,6 +486,6 @@ resource "aws_codepipeline" "pipeline" {
         FileName    = "imagedefinitions.json"
       }
     }
-  }
-}
+  }*/
+
 
