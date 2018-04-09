@@ -11,5 +11,5 @@ task_desired_count       = {
   prod = 1
 }
 
-github_repository        = "api-accelerator"
+github_repository        = "demo-api"
 

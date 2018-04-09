@@ -49,6 +49,9 @@ fi
 export ENVIRONMENT=$1
 export AWS_PROFILE=$2
 
+# source GITHUB_TOKEN, see https://www.terraform.io/docs/providers/aws/r/codepipeline.html
+source ./secrets-env.sh
+
 export TF_IN_AUTOMATION=true
 
 if [[ $DIRS == "" ]]; then
@@ -66,7 +69,7 @@ for DIR in $DIRS; do
     terraform init -input=false $UPGRADE
     terraform workspace new $ENVIRONMENT || true
     terraform workspace 'select' $ENVIRONMENT
-    terraform apply $AUTO_APPROVE -var-file ../application.tfvars -var-file ../secrets.tfvars
+    GITHUB_TOKEN=$GITHUB_TOKEN terraform apply $AUTO_APPROVE -var-file ../application.tfvars -var-file ../secrets.tfvars
     cd ..
     echo ""
     echo "#-----------------------------------------------------"

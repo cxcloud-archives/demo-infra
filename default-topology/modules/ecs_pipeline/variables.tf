@@ -4,18 +4,6 @@ variable "ecs_dev_cluster_name" {}
 
 variable "ecs_dev_service_name" {}
 
-variable "ecs_test_cluster_name" {}
-
-variable "ecs_test_service_name" {}
-
-variable "ecs_prod_cluster_name" {}
-
-variable "ecs_prod_service_name" {}
-
-variable "terraform_prod_role" {}
-
-variable "prod_account_id" {}
-
 variable "github_user" {}
 
 variable "github_repository" {}
@@ -24,11 +12,11 @@ variable "github_repository_branch" {
   default = "master"
 }
 
+variable "terraform_prod_role" {}
+
 variable "gitcrypt_pass" {}
 
 variable "build_spec" {}
-
-variable "GITHUB_TOKEN" {}
 
 variable "create_pipeline" {}
 

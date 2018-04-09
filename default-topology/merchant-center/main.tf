@@ -68,17 +68,11 @@ module "pipeline" {
   source                = "../modules/ecs_pipeline"
   github_user           = "${var.github_user}"
   github_repository     = "${var.github_repository}"
-  GITHUB_TOKEN          = "${var.github_token}"
   gitcrypt_pass         = "${var.gitcrypt_pass}"
   build_spec            = "${terraform.workspace == "dev" ? join("", data.template_file.buildspec.*.rendered) : ""}"
   pipeline_name         = "${var.application_name}-${var.container_name}"
   ecs_dev_cluster_name  = "${data.terraform_remote_state.shared.cluster_name}"
   ecs_dev_service_name  = "${module.service.name}"
-  ecs_test_cluster_name = "${var.application_name}-test-cluster"                # FIXME
-  ecs_test_service_name = "${var.application_name}-test-${var.container_name}"  # FIXME
-  ecs_prod_cluster_name = "${var.application_name}-prod-cluster"                # FIXME, hardcoded
-  ecs_prod_service_name = "${var.application_name}-prod-${var.container_name}"  # FIXME, hardcoded
   terraform_prod_role   = "${lookup(var.workspace_iam_roles, "prod")}"
-  prod_account_id       = "${var.aws_prod_account_id}"
   create_pipeline       = "${terraform.workspace == "dev" ? true : false}"
 }

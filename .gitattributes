@@ -1,2 +1,3 @@
 default-topology/secrets.tfvars filter=git-crypt diff=git-crypt
 default-topology/tfs3backend/terraform.tfstate filter=git-crypt diff=git-crypt
+default-topology/secrets-env.sh filter=git-crypt diff=git-crypt

@@ -23,8 +23,6 @@ variable "task_desired_count" {
 
 variable "github_user" {}
 
-variable "github_token" {}
-
 variable "github_repository" {}
 
 variable "gitcrypt_pass" {}

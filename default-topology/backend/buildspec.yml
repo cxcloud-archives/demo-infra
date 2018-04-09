@@ -16,7 +16,7 @@ phases:
       - ok && echo Build started on `date`
       - ok && echo Building the Docker image...
       - ok && docker build -t $REPOSITORY_URI:latest .
-      - ok && cdocker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+      - ok && docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
       - ok && echo Build completed on `date`
